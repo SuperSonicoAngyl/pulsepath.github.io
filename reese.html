@@ -2,51 +2,418 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>REESE TITAN v3.0</title>
+    <title>SUPER SONICO SYNTH</title>
     <style>
-        :root { --neon: #00ffcc; --bg: #080808; --panel: #121212; --border: #252525; }
-        body { background: var(--bg); color: var(--neon); font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; user-select: none; }
+        :root { 
+            --sonico-pink: #FF1493; 
+            --sonico-cyan: #00FFD9; 
+            --sonico-bg: #0a0015; 
+            --sonico-panel: #1a0033; 
+            --sonico-border: #FF1493; 
+            --sonico-white: #FFFFFF;
+        }
         
-        .vst-rack { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; width: 950px; padding: 15px; box-shadow: 0 25px 50px rgba(0,0,0,1); }
+        * { box-sizing: border-box; }
+        
+        body { 
+            background: linear-gradient(135deg, var(--sonico-bg) 0%, #1a0a2e 100%);
+            color: var(--sonico-white); 
+            font-family: 'Arial', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+            margin: 0; 
+            user-select: none;
+            min-height: 100vh;
+        }
+        
+        .vst-rack { 
+            background: linear-gradient(to bottom, var(--sonico-panel), #0f001e);
+            border: 3px solid var(--sonico-pink); 
+            border-radius: 12px; 
+            width: 950px; 
+            padding: 20px; 
+            box-shadow: 0 0 30px var(--sonico-pink), inset 0 0 20px rgba(255, 20, 147, 0.1); 
+        }
         
         /* Header & Presets */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .logo { font-weight: 900; letter-spacing: 3px; font-size: 1.2rem; }
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
+            border-bottom: 2px solid var(--sonico-pink); 
+            padding-bottom: 12px; 
+        }
+        
+        .logo { 
+            font-weight: 900; 
+            letter-spacing: 4px; 
+            font-size: 1.5rem;
+            color: var(--sonico-pink);
+            text-shadow: 0 0 10px var(--sonico-pink), 0 0 20px var(--sonico-cyan);
+        }
+        
         .preset-controls { display: flex; gap: 8px; }
-        select, input[type=text], .btn { background: #000; color: var(--neon); border: 1px solid var(--border); padding: 5px; font-size: 12px; border-radius: 4px; outline: none; }
-        .btn:hover { background: var(--neon); color: #000; cursor: pointer; }
+        
+        select, input[type=text], .btn { 
+            background: rgba(0, 0, 0, 0.6); 
+            color: var(--sonico-white); 
+            border: 2px solid var(--sonico-cyan); 
+            padding: 8px 12px; 
+            font-size: 12px; 
+            border-radius: 6px; 
+            outline: none;
+            font-weight: bold;
+        }
+        
+        select:hover, input[type=text]:hover {
+            border-color: var(--sonico-pink);
+            box-shadow: 0 0 10px var(--sonico-cyan);
+        }
+        
+        .btn { 
+            cursor: pointer; 
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        
+        .btn:hover { 
+            background: var(--sonico-pink); 
+            color: var(--sonico-white); 
+            cursor: pointer; 
+            box-shadow: 0 0 15px var(--sonico-pink);
+        }
 
         /* Tabs */
         .tabs { display: flex; gap: 2px; margin-bottom: 15px; }
-        .tab-btn { background: #1a1a1a; border: 1px solid var(--border); color: #666; padding: 8px 25px; cursor: pointer; text-transform: uppercase; font-size: 11px; font-weight: bold; border-bottom: none; border-radius: 4px 4px 0 0; }
-        .tab-btn.active { background: var(--panel); color: var(--neon); border-bottom: 2px solid var(--neon); }
+        
+        .tab-btn { 
+            background: rgba(0, 0, 0, 0.7); 
+            border: 2px solid var(--sonico-cyan); 
+            color: var(--sonico-white); 
+            padding: 10px 25px; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            font-size: 11px; 
+            font-weight: bold; 
+            border-bottom: 2px solid var(--sonico-cyan);
+            border-radius: 8px 8px 0 0; 
+            transition: all 0.2s;
+        }
+        
+        .tab-btn:hover {
+            box-shadow: 0 0 10px var(--sonico-cyan);
+        }
+        
+        .tab-btn.active { 
+            background: var(--sonico-pink); 
+            color: var(--sonico-white); 
+            border-color: var(--sonico-pink);
+            box-shadow: 0 0 15px var(--sonico-pink);
+        }
+        
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
         /* EQ Visualization */
-        .eq-viewport { position: relative; width: 100%; height: 260px; background: #050505; border: 1px solid #333; border-radius: 4px; overflow: hidden; cursor: crosshair; }
+        .eq-viewport { 
+            position: relative; 
+            width: 100%; 
+            height: 260px; 
+            background: linear-gradient(to bottom, rgba(255, 20, 147, 0.1), rgba(0, 255, 217, 0.1));
+            border: 3px solid var(--sonico-cyan); 
+            border-radius: 8px; 
+            overflow: hidden; 
+            cursor: crosshair;
+            box-shadow: inset 0 0 20px rgba(0, 255, 217, 0.2);
+        }
+        
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
         /* Module Grids */
         .module-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 15px; }
-        .module { background: #181818; padding: 12px; border-radius: 6px; border: 1px solid #222; }
-        .module h3 { margin: 0 0 10px 0; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 1px; }
-        label { font-size: 10px; color: #888; display: flex; justify-content: space-between; margin-bottom: 3px; }
-        input[type=range] { width: 100%; accent-color: var(--neon); cursor: pointer; }
+        
+        .module { 
+            background: linear-gradient(to bottom, rgba(255, 20, 147, 0.05), rgba(0, 255, 217, 0.05));
+            padding: 12px; 
+            border-radius: 8px; 
+            border: 2px solid var(--sonico-cyan);
+            box-shadow: 0 0 10px rgba(0, 255, 217, 0.3);
+        }
+        
+        .module:hover {
+            border-color: var(--sonico-pink);
+            box-shadow: 0 0 15px var(--sonico-pink);
+        }
+        
+        .module h3 { 
+            margin: 0 0 10px 0; 
+            font-size: 10px; 
+            color: var(--sonico-white); 
+            text-transform: uppercase; 
+            letter-spacing: 2px;
+            text-shadow: 0 0 5px var(--sonico-pink);
+        }
+        
+        label { 
+            font-size: 10px; 
+            color: var(--sonico-white); 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type=range] { 
+            width: 100%; 
+            accent-color: var(--sonico-pink); 
+            cursor: pointer;
+            height: 6px;
+            border-radius: 3px;
+            display: none;
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--sonico-pink);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--sonico-pink);
+        }
+
+        /* Knob Styling */
+        .knob-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .knob-label {
+            font-size: 9px;
+            color: var(--sonico-white);
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .knob-value {
+            font-size: 10px;
+            color: var(--sonico-cyan);
+            font-weight: bold;
+            min-width: 35px;
+            text-align: center;
+        }
+
+        .knob {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.3), rgba(0, 0, 0, 0.8));
+            border: 3px solid var(--sonico-pink);
+            position: relative;
+            cursor: grab;
+            box-shadow: 0 0 20px rgba(255, 20, 147, 0.5), inset 0 0 15px rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: box-shadow 0.2s;
+            user-select: none;
+        }
+
+        .knob:hover {
+            box-shadow: 0 0 30px rgba(255, 20, 147, 0.8), inset 0 0 15px rgba(0, 0, 0, 0.8);
+        }
+
+        .knob:active {
+            cursor: grabbing;
+        }
+
+        .knob-indicator {
+            width: 4px;
+            height: 16px;
+            background: linear-gradient(to top, var(--sonico-cyan), var(--sonico-pink));
+            position: absolute;
+            top: 6px;
+            border-radius: 2px;
+            box-shadow: 0 0 8px var(--sonico-cyan);
+        }
 
         /* Keyboard Labels & Keys */
-        .keyboard-container { width: 950px; margin-top: 15px; position: relative; }
-        .keyboard { display: flex; height: 110px; background: #000; padding: 4px; border-radius: 4px; border: 1px solid var(--border); }
-        .key { flex: 1; border: 1px solid #000; background: #e0e0e0; border-radius: 0 0 3px 3px; cursor: pointer; position: relative; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px; color: #888; font-size: 9px; }
-        .key.black { background: #222; flex: 0.7; height: 60%; margin: 0 -1.5%; z-index: 2; border-color: #333; color: #555; }
-        .key.active { background: var(--neon) !important; box-shadow: 0 0 20px var(--neon); color: #000; }
+        .keyboard-container { width: 950px; margin-top: 20px; position: relative; }
+        
+        .keyboard { 
+            display: flex; 
+            height: 120px; 
+            background: rgba(0, 0, 0, 0.8); 
+            padding: 6px; 
+            border-radius: 8px; 
+            border: 3px solid var(--sonico-pink);
+            box-shadow: 0 0 20px rgba(255, 20, 147, 0.5);
+        }
+        
+        .key { 
+            flex: 1; 
+            border: 2px solid var(--sonico-white); 
+            background: linear-gradient(to bottom, #ffffff, #e0e0ff);
+            border-radius: 0 0 6px 6px; 
+            cursor: pointer; 
+            position: relative; 
+            display: flex; 
+            align-items: flex-end; 
+            justify-content: center; 
+            padding-bottom: 8px; 
+            color: #000; 
+            font-size: 10px;
+            font-weight: bold;
+            transition: all 0.1s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        .key:hover {
+            background: linear-gradient(to bottom, #ffffff, #f0f0ff);
+            box-shadow: 0 0 10px var(--sonico-cyan);
+        }
+        
+        .key.black { 
+            background: linear-gradient(to bottom, #1a1a1a, #000);
+            flex: 0.7; 
+            height: 65%; 
+            margin: 0 -1.5%; 
+            z-index: 2; 
+            border-color: var(--sonico-pink); 
+            color: var(--sonico-pink);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.8), 0 0 10px rgba(255, 20, 147, 0.3);
+        }
+        
+        .key.black:hover {
+            box-shadow: 0 0 15px var(--sonico-pink);
+        }
+        
+        .key.active { 
+            background: linear-gradient(to bottom, var(--sonico-pink), #ff69b4) !important;
+            box-shadow: 0 0 25px var(--sonico-pink), inset 0 0 10px rgba(255, 255, 255, 0.3) !important; 
+            color: var(--sonico-white) !important;
+        }
+        
+        .key.black.active {
+            background: linear-gradient(to bottom, var(--sonico-cyan), #00ff99) !important;
+            box-shadow: 0 0 25px var(--sonico-cyan) !important;
+            color: #000 !important;
+        }
+
+        /* Decorative Images */
+        .decoration {
+            position: fixed;
+            object-fit: contain;
+            opacity: 0.85;
+            filter: drop-shadow(0 0 15px var(--sonico-pink)) drop-shadow(0 0 30px rgba(0, 255, 217, 0.4));
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .decoration.top-left {
+            top: 20px;
+            left: 20px;
+            width: 180px;
+            height: 180px;
+        }
+
+        .decoration.top-right {
+            top: 20px;
+            right: 20px;
+            width: 160px;
+            height: 160px;
+        }
+
+        .decoration.bottom-left {
+            bottom: 20px;
+            left: 20px;
+            width: 140px;
+            height: 140px;
+        }
+
+        .decoration.bottom-right {
+            bottom: 20px;
+            right: 20px;
+            width: 170px;
+            height: 170px;
+        }
+
+        .decoration.center-top {
+            top: 50%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-120px);
+            width: 150px;
+            height: 150px;
+        }
+
+        .decoration.side-left {
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            width: 120px;
+            height: 120px;
+        }
+
+        .decoration.side-right {
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            width: 130px;
+            height: 130px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .decoration {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .decoration.top-right {
+            animation-delay: 1s;
+        }
+
+        .decoration.bottom-left {
+            animation-delay: 2s;
+        }
+
+        .decoration.bottom-right {
+            animation-delay: 1.5s;
+        }
+
+        .decoration.side-left {
+            animation-delay: 2.5s;
+        }
+
+        .decoration.side-right {
+            animation-delay: 0.5s;
+        }
     </style>
 </head>
 <body>
 
+<!-- Decorative Images -->
+<img src="IMG_1398.jpeg" alt="deco1" class="decoration top-left">
+<img src="IMG_1399.jpeg" alt="deco2" class="decoration top-right">
+<img src="IMG_1400.jpeg" alt="deco3" class="decoration bottom-left">
+<img src="IMG_1401.jpeg" alt="deco4" class="decoration bottom-right">
+<img src="IMG_1402.jpeg" alt="deco5" class="decoration side-left">
+<img src="IMG_1403.jpeg" alt="deco6" class="decoration side-right">
+<img src="Supersonicocharacter.png" alt="sonic" class="decoration" style="top: 55%; left: 50%; transform: translateX(-50%) translateY(-50%); width: 200px; height: 200px;">
+
 <div class="vst-rack">
     <div class="header">
-        <div class="logo">REESE TITAN</div>
+        <div class="logo">♪ SUPER SONICO SYNTH ♪</div>
         <div class="preset-controls">
             <select id="presetSelect" onchange="loadPreset()"></select>
             <input type="text" id="pName" placeholder="Preset Name">
@@ -67,24 +434,64 @@
         <div class="module-grid">
             <div class="module">
                 <h3>Oscillators</h3>
-                <label>Unison <span id="u_v">5</span></label><input type="range" id="unison" min="1" max="9" value="5">
-                <label>Detune <span id="d_v">25</span></label><input type="range" id="detune" min="0" max="100" value="25">
-                <label>Sub Level</label><input type="range" id="subLevel" min="0" max="1" step="0.01" value="0.6">
+                <div class="knob-container">
+                    <div class="knob-label">Unison</div>
+                    <div class="knob" data-param="unison" data-min="1" data-max="9" data-value="5"></div>
+                    <div class="knob-value"><span id="v_unison">5</span></div>
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">Detune</div>
+                    <div class="knob" data-param="detune" data-min="0" data-max="100" data-value="25"></div>
+                    <div class="knob-value"><span id="v_detune">25</span></div>
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">Sub Level</div>
+                    <div class="knob" data-param="subLevel" data-min="0" data-max="1" data-step="0.01" data-value="0.6"></div>
+                    <div class="knob-value"><span id="v_subLevel">0.6</span></div>
+                </div>
+                <input type="range" id="unison" min="1" max="9" value="5">
+                <input type="range" id="detune" min="0" max="100" value="25">
+                <input type="range" id="subLevel" min="0" max="1" step="0.01" value="0.6">
             </div>
             <div class="module">
                 <h3>Filter Envelope</h3>
-                <label>Attack</label><input type="range" id="attack" min="0.01" max="2" step="0.01" value="0.1">
-                <label>Release</label><input type="range" id="release" min="0.1" max="4" step="0.1" value="0.8">
+                <div class="knob-container">
+                    <div class="knob-label">Attack</div>
+                    <div class="knob" data-param="attack" data-min="0.01" data-max="2" data-step="0.01" data-value="0.1"></div>
+                    <div class="knob-value"><span id="v_attack">0.1</span></div>
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">Release</div>
+                    <div class="knob" data-param="release" data-min="0.1" data-max="4" data-step="0.1" data-value="0.8"></div>
+                    <div class="knob-value"><span id="v_release">0.8</span></div>
+                </div>
+                <input type="range" id="attack" min="0.01" max="2" step="0.01" value="0.1">
+                <input type="range" id="release" min="0.1" max="4" step="0.1" value="0.8">
             </div>
             <div class="module">
                 <h3>Movement</h3>
-                <label>LFO Speed</label><input type="range" id="lfoRate" min="0.1" max="20" step="0.1" value="4">
-                <label>LFO Depth</label><input type="range" id="lfoDepth" min="0" max="4000" value="1500">
+                <div class="knob-container">
+                    <div class="knob-label">LFO Speed</div>
+                    <div class="knob" data-param="lfoRate" data-min="0.1" data-max="20" data-step="0.1" data-value="4"></div>
+                    <div class="knob-value"><span id="v_lfoRate">4</span></div>
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">LFO Depth</div>
+                    <div class="knob" data-param="lfoDepth" data-min="0" data-max="4000" data-value="1500"></div>
+                    <div class="knob-value"><span id="v_lfoDepth">1500</span></div>
+                </div>
+                <input type="range" id="lfoRate" min="0.1" max="20" step="0.1" value="4">
+                <input type="range" id="lfoDepth" min="0" max="4000" value="1500">
             </div>
             <div class="module">
                 <h3>Master Output</h3>
-                <label>Gain</label><input type="range" id="masterVol" min="0" max="1" step="0.01" value="0.7">
-                <button class="btn" onclick="audioCtx.resume()" style="margin-top:10px; width:100%">RESET AUDIO</button>
+                <div class="knob-container">
+                    <div class="knob-label">Gain</div>
+                    <div class="knob" data-param="masterVol" data-min="0" data-max="1" data-step="0.01" data-value="0.7"></div>
+                    <div class="knob-value"><span id="v_masterVol">0.7</span></div>
+                </div>
+                <button class="btn" onclick="audioCtx.resume()" style="margin-top:15px; width:100%">RESET AUDIO</button>
+                <input type="range" id="masterVol" min="0" max="1" step="0.01" value="0.7">
             </div>
         </div>
     </div>
@@ -93,18 +500,48 @@
         <div class="module-grid">
             <div class="module">
                 <h3>Distortion</h3>
-                <label>Saturate</label><input type="range" id="saturate" min="0" max="100" value="15">
-                <label>Bitcrush</label><input type="range" id="bitcrush" min="1" max="16" step="0.5" value="16">
+                <div class="knob-container">
+                    <div class="knob-label">Saturate</div>
+                    <div class="knob" data-param="saturate" data-min="0" data-max="100" data-value="15"></div>
+                    <div class="knob-value"><span id="v_saturate">15</span></div>
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">Bitcrush</div>
+                    <div class="knob" data-param="bitcrush" data-min="1" data-max="16" data-step="0.5" data-value="16"></div>
+                    <div class="knob-value"><span id="v_bitcrush">16</span></div>
+                </div>
+                <input type="range" id="saturate" min="0" max="100" value="15">
+                <input type="range" id="bitcrush" min="1" max="16" step="0.5" value="16">
             </div>
             <div class="module">
                 <h3>Modulation FX</h3>
-                <label>Phaser Rate</label><input type="range" id="phRate" min="0" max="10" step="0.1" value="1">
-                <label>Chorus Mix</label><input type="range" id="chMix" min="0" max="1" step="0.1" value="0.3">
+                <div class="knob-container">
+                    <div class="knob-label">Phaser Rate</div>
+                    <div class="knob" data-param="phRate" data-min="0" data-max="10" data-step="0.1" data-value="1"></div>
+                    <div class="knob-value"><span id="v_phRate">1</span></div>
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">Chorus Mix</div>
+                    <div class="knob" data-param="chMix" data-min="0" data-max="1" data-step="0.1" data-value="0.3"></div>
+                    <div class="knob-value"><span id="v_chMix">0.3</span></div>
+                </div>
+                <input type="range" id="phRate" min="0" max="10" step="0.1" value="1">
+                <input type="range" id="chMix" min="0" max="1" step="0.1" value="0.3">
             </div>
             <div class="module">
                 <h3>Time FX</h3>
-                <label>Delay Mix</label><input type="range" id="delayMix" min="0" max="0.8" step="0.01" value="0.2">
-                <label>Reverb Mix</label><input type="range" id="reverbMix" min="0" max="0.8" step="0.01" value="0.15">
+                <div class="knob-container">
+                    <div class="knob-label">Delay Mix</div>
+                    <div class="knob" data-param="delayMix" data-min="0" data-max="0.8" data-step="0.01" data-value="0.2"></div>
+                    <div class="knob-value"><span id="v_delayMix">0.2</span></div>
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">Reverb Mix</div>
+                    <div class="knob" data-param="reverbMix" data-min="0" data-max="0.8" data-step="0.01" data-value="0.15"></div>
+                    <div class="knob-value"><span id="v_reverbMix">0.15</span></div>
+                </div>
+                <input type="range" id="delayMix" min="0" max="0.8" step="0.01" value="0.2">
+                <input type="range" id="reverbMix" min="0" max="0.8" step="0.01" value="0.15">
             </div>
         </div>
     </div>
@@ -259,10 +696,16 @@ function stopNote(midi) {
     if (!activeNotes.has(midi)) return;
     const { voices, lfo, nGain } = activeNotes.get(midi);
     const now = audioCtx.currentTime;
-    const rel = getVal('release');
+
+    // cancel any scheduled gain changes and cut the note immediately
     nGain.gain.cancelScheduledValues(now);
-    nGain.gain.exponentialRampToValueAtTime(0.001, now + rel);
-    setTimeout(() => { voices.forEach(v => v.stop()); lfo.stop(); activeNotes.delete(midi); }, rel * 1000 + 100);
+    nGain.gain.setValueAtTime(0.0001, now); // almost silent
+    
+    // stop oscillators and cleanup right away
+    voices.forEach(v => v.stop());
+    lfo.stop();
+    activeNotes.delete(midi);
+
     const key = document.querySelector(`[data-midi="${midi}"]`);
     if(key) key.classList.remove('active');
 }
@@ -306,24 +749,110 @@ function draw() {
 
     const data = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(data);
-    rtaCtx.fillStyle = '#050505'; rtaCtx.fillRect(0,0,w,h);
-    rtaCtx.fillStyle = '#00ffcc22';
+    rtaCtx.fillStyle = 'rgba(10, 0, 21, 0.9)'; 
+    rtaCtx.fillRect(0,0,w,h);
+    
+    // Pink and cyan gradient bars for Super Sonico theme
     for(let i=0; i<data.length; i++) {
         let bar = (data[i]/255)*h;
+        const hue = (i/data.length) * 360;
+        const isLeft = i < data.length / 2;
+        rtaCtx.fillStyle = isLeft ? 'rgba(255, 20, 147, 0.6)' : 'rgba(0, 255, 217, 0.6)';
         rtaCtx.fillRect((i/data.length)*w, h-bar, 2, bar);
     }
 
     eqCtx.clearRect(0,0,w,h);
     updateNodePhysics();
     bands.forEach(b => {
-        eqCtx.shadowBlur = 10; eqCtx.shadowColor = '#00ffcc';
-        eqCtx.fillStyle = '#00ffcc';
-        eqCtx.beginPath(); eqCtx.arc(b.x, b.y, 6, 0, Math.PI*2); eqCtx.fill();
-        eqCtx.strokeStyle = '#fff'; eqCtx.lineWidth = 1; eqCtx.stroke();
+        eqCtx.shadowBlur = 12; 
+        eqCtx.shadowColor = '#FF1493';
+        eqCtx.fillStyle = '#FF1493';
+        eqCtx.beginPath(); 
+        eqCtx.arc(b.x, b.y, 8, 0, Math.PI*2); 
+        eqCtx.fill();
+        eqCtx.strokeStyle = '#00FFD9'; 
+        eqCtx.lineWidth = 2; 
+        eqCtx.stroke();
     });
 }
 
 const getVal = (id) => parseFloat(document.getElementById(id).value);
+
+// --- KNOB CONTROL SYSTEM ---
+const knobs = document.querySelectorAll('.knob');
+let activeKnob = null;
+let knobStartY = 0;
+
+function updateKnobRotation(knobEl) {
+    const param = knobEl.dataset.param;
+    const inputEl = document.getElementById(param);
+    const min = parseFloat(knobEl.dataset.min);
+    const max = parseFloat(knobEl.dataset.max);
+    const value = parseFloat(inputEl.value);
+    
+    const range = max - min;
+    const percent = (value - min) / range;
+    const rotation = percent * 270 - 135; // 270 degree range, centered
+    
+    const indicator = knobEl.querySelector('.knob-indicator');
+    if(indicator) indicator.style.transform = `rotate(${rotation}deg)`;
+    
+    const valueDisplay = document.getElementById(`v_${param}`);
+    if(valueDisplay) {
+        const displayValue = max > 10 ? value.toFixed(2) : value.toFixed(1);
+        valueDisplay.textContent = displayValue;
+    }
+}
+
+knobs.forEach(knob => {
+    const indicator = document.createElement('div');
+    indicator.className = 'knob-indicator';
+    knob.appendChild(indicator);
+    updateKnobRotation(knob);
+    
+    knob.addEventListener('mousedown', (e) => {
+        activeKnob = knob;
+        knobStartY = e.clientY;
+        knob.style.opacity = '0.8';
+    });
+});
+
+window.addEventListener('mousemove', (e) => {
+    if(!activeKnob) return;
+    
+    const param = activeKnob.dataset.param;
+    const inputEl = document.getElementById(param);
+    const min = parseFloat(activeKnob.dataset.min);
+    const max = parseFloat(activeKnob.dataset.max);
+    const step = parseFloat(activeKnob.dataset.step) || 1;
+    
+    const deltaY = knobStartY - e.clientY;
+    const range = max - min;
+    const currentValue = parseFloat(inputEl.value);
+    const sensitivity = range / 150;
+    let newValue = currentValue + (deltaY * sensitivity);
+    
+    newValue = Math.max(min, Math.min(max, newValue));
+    newValue = Math.round(newValue / step) * step;
+    
+    inputEl.value = newValue;
+    updateKnobRotation(activeKnob);
+    knobStartY = e.clientY;
+});
+
+window.addEventListener('mouseup', () => {
+    if(activeKnob) {
+        activeKnob.style.opacity = '1';
+        activeKnob = null;
+    }
+});
+
+// Update knobs when preset is loaded
+const originalLoadPreset = loadPreset;
+loadPreset = function() {
+    originalLoadPreset.call(this);
+    knobs.forEach(knob => updateKnobRotation(knob));
+};
 
 // Init Keyboard
 const kb = document.getElementById('keyboard');
@@ -335,11 +864,24 @@ for(let i=24; i<=72; i++) {
     k.innerHTML = !isBlack ? `<span>${noteNames[i%12]}${Math.floor(i/12)-1}</span>` : '';
     k.onmousedown = () => startNote(i);
     k.onmouseup = () => stopNote(i);
+    k.onmouseleave = () => stopNote(i); // Stop note if mouse leaves the key
     kb.appendChild(k);
 }
 
-window.onkeydown = (e) => { if(computerKeyMap[e.key.toLowerCase()]) startNote(computerKeyMap[e.key.toLowerCase()]); };
-window.onkeyup = (e) => { if(computerKeyMap[e.key.toLowerCase()]) stopNote(computerKeyMap[e.key.toLowerCase()]); };
+// Keyboard event handlers - properly stop notes on key release
+window.onkeydown = (e) => { 
+    const key = e.key.toLowerCase();
+    if(computerKeyMap[key]) {
+        startNote(computerKeyMap[key]);
+    }
+};
+
+window.onkeyup = (e) => { 
+    const key = e.key.toLowerCase();
+    if(computerKeyMap[key]) {
+        stopNote(computerKeyMap[key]);
+    }
+};
 
 updatePresetSelect();
 loadPreset();

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>REESE TITAN v3.0</title>
+    <style>
+        :root { --neon: #00ffcc; --bg: #080808; --panel: #121212; --border: #252525; }
+        body { background: var(--bg); color: var(--neon); font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; user-select: none; }
+        
+        .vst-rack { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; width: 950px; padding: 15px; box-shadow: 0 25px 50px rgba(0,0,0,1); }
+        
+        /* Header & Presets */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .logo { font-weight: 900; letter-spacing: 3px; font-size: 1.2rem; }
+        .preset-controls { display: flex; gap: 8px; }
+        select, input[type=text], .btn { background: #000; color: var(--neon); border: 1px solid var(--border); padding: 5px; font-size: 12px; border-radius: 4px; outline: none; }
+        .btn:hover { background: var(--neon); color: #000; cursor: pointer; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 2px; margin-bottom: 15px; }
+        .tab-btn { background: #1a1a1a; border: 1px solid var(--border); color: #666; padding: 8px 25px; cursor: pointer; text-transform: uppercase; font-size: 11px; font-weight: bold; border-bottom: none; border-radius: 4px 4px 0 0; }
+        .tab-btn.active { background: var(--panel); color: var(--neon); border-bottom: 2px solid var(--neon); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* EQ Visualization */
+        .eq-viewport { position: relative; width: 100%; height: 260px; background: #050505; border: 1px solid #333; border-radius: 4px; overflow: hidden; cursor: crosshair; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* Module Grids */
+        .module-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 15px; }
+        .module { background: #181818; padding: 12px; border-radius: 6px; border: 1px solid #222; }
+        .module h3 { margin: 0 0 10px 0; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 1px; }
+        label { font-size: 10px; color: #888; display: flex; justify-content: space-between; margin-bottom: 3px; }
+        input[type=range] { width: 100%; accent-color: var(--neon); cursor: pointer; }
+
+        /* Keyboard Labels & Keys */
+        .keyboard-container { width: 950px; margin-top: 15px; position: relative; }
+        .keyboard { display: flex; height: 110px; background: #000; padding: 4px; border-radius: 4px; border: 1px solid var(--border); }
+        .key { flex: 1; border: 1px solid #000; background: #e0e0e0; border-radius: 0 0 3px 3px; cursor: pointer; position: relative; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px; color: #888; font-size: 9px; }
+        .key.black { background: #222; flex: 0.7; height: 60%; margin: 0 -1.5%; z-index: 2; border-color: #333; color: #555; }
+        .key.active { background: var(--neon) !important; box-shadow: 0 0 20px var(--neon); color: #000; }
+    </style>
+</head>
+<body>
+
+<div class="vst-rack">
+    <div class="header">
+        <div class="logo">REESE TITAN</div>
+        <div class="preset-controls">
+            <select id="presetSelect" onchange="loadPreset()"></select>
+            <input type="text" id="pName" placeholder="Preset Name">
+            <button class="btn" onclick="saveNewPreset()">SAVE</button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('main')">Synthesis & EQ</button>
+        <button class="tab-btn" onclick="switchTab('fx')">Global Effects</button>
+    </div>
+
+    <div id="main" class="tab-content active">
+        <div class="eq-viewport" id="eqView">
+            <canvas id="rtaCanvas"></canvas>
+            <canvas id="eqCanvas"></canvas>
+        </div>
+        <div class="module-grid">
+            <div class="module">
+                <h3>Oscillators</h3>
+                <label>Unison <span id="u_v">5</span></label><input type="range" id="unison" min="1" max="9" value="5">
+                <label>Detune <span id="d_v">25</span></label><input type="range" id="detune" min="0" max="100" value="25">
+                <label>Sub Level</label><input type="range" id="subLevel" min="0" max="1" step="0.01" value="0.6">
+            </div>
+            <div class="module">
+                <h3>Filter Envelope</h3>
+                <label>Attack</label><input type="range" id="attack" min="0.01" max="2" step="0.01" value="0.1">
+                <label>Release</label><input type="range" id="release" min="0.1" max="4" step="0.1" value="0.8">
+            </div>
+            <div class="module">
+                <h3>Movement</h3>
+                <label>LFO Speed</label><input type="range" id="lfoRate" min="0.1" max="20" step="0.1" value="4">
+                <label>LFO Depth</label><input type="range" id="lfoDepth" min="0" max="4000" value="1500">
+            </div>
+            <div class="module">
+                <h3>Master Output</h3>
+                <label>Gain</label><input type="range" id="masterVol" min="0" max="1" step="0.01" value="0.7">
+                <button class="btn" onclick="audioCtx.resume()" style="margin-top:10px; width:100%">RESET AUDIO</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="fx" class="tab-content">
+        <div class="module-grid">
+            <div class="module">
+                <h3>Distortion</h3>
+                <label>Saturate</label><input type="range" id="saturate" min="0" max="100" value="15">
+                <label>Bitcrush</label><input type="range" id="bitcrush" min="1" max="16" step="0.5" value="16">
+            </div>
+            <div class="module">
+                <h3>Modulation FX</h3>
+                <label>Phaser Rate</label><input type="range" id="phRate" min="0" max="10" step="0.1" value="1">
+                <label>Chorus Mix</label><input type="range" id="chMix" min="0" max="1" step="0.1" value="0.3">
+            </div>
+            <div class="module">
+                <h3>Time FX</h3>
+                <label>Delay Mix</label><input type="range" id="delayMix" min="0" max="0.8" step="0.01" value="0.2">
+                <label>Reverb Mix</label><input type="range" id="reverbMix" min="0" max="0.8" step="0.01" value="0.15">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="keyboard-container">
+    <div class="keyboard" id="keyboard"></div>
+</div>
+
+<script>
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const activeNotes = new Map();
+const analyser = audioCtx.createAnalyser();
+analyser.fftSize = 2048;
+
+// --- 7-BAND PARAMETRIC EQ STATE ---
+const bands = [
+    { type: 'highpass', f: 40, g: 0, x: 0, y: 0 },
+    { type: 'lowshelf', f: 120, g: 0, x: 0, y: 0 },
+    { type: 'peaking', f: 400, g: 0, x: 0, y: 0 },
+    { type: 'peaking', f: 1000, g: 0, x: 0, y: 0 },
+    { type: 'peaking', f: 2500, g: 0, x: 0, y: 0 },
+    { type: 'highshelf', f: 6000, g: 0, x: 0, y: 0 },
+    { type: 'lowpass', f: 15000, g: 0, x: 0, y: 0 }
+];
+
+const filters = bands.map(b => {
+    const f = audioCtx.createBiquadFilter();
+    f.type = b.type; f.frequency.value = b.f; f.gain.value = b.g;
+    return f;
+});
+
+// Route: Filters -> Analyser -> Out
+filters.forEach((f, i) => { if(i < 6) f.connect(filters[i+1]); });
+filters[6].connect(analyser); analyser.connect(audioCtx.destination);
+
+// --- 10 PRESETS ---
+const presets = {
+    "Classic Reese": { unison: 5, detune: 25, lfoRate: 3.5, lfoDepth: 900, saturate: 10, eq: [40, 150, 0, 0, 0, 0, 6000], subLevel: 0.6 },
+    "Sub Destroyer": { unison: 2, detune: 5, lfoRate: 1.2, lfoDepth: 300, saturate: 20, eq: [30, 80, 5, 0, 0, 0, 800], subLevel: 1.0 },
+    "Neuro Wobble": { unison: 8, detune: 50, lfoRate: 7, lfoDepth: 2500, saturate: 45, eq: [60, 200, 8, 10, 5, 0, 3000], subLevel: 0.5 },
+    "Phased Air": { unison: 4, detune: 15, lfoRate: 0.4, lfoDepth: 1500, phRate: 3, chMix: 0.7, eq: [40, 0, 0, 0, 5, 8, 12000], subLevel: 0.2 },
+    "Industrial Grind": { unison: 9, detune: 70, saturate: 80, bitcrush: 8, eq: [100, 200, 12, -10, 15, 0, 2000], subLevel: 0.8 },
+    "Liquid Bass": { unison: 3, detune: 12, lfoRate: 2.5, lfoDepth: 500, chMix: 0.5, delayMix: 0.3, eq: [40, 150, -5, 0, 0, 0, 1500], subLevel: 0.7 },
+    "Haunted Mid": { unison: 6, detune: 22, reverbMix: 0.6, eq: [400, 0, 12, 0, 0, 0, 4500], subLevel: 0 },
+    "Titan Lead": { unison: 7, detune: 10, attack: 0.05, release: 0.4, saturate: 15, eq: [100, 0, 0, 8, 12, 10, 14000], subLevel: 0.3 },
+    "Aggro Drone": { unison: 5, detune: 40, lfoRate: 12, lfoDepth: 3500, saturate: 30, eq: [50, 200, 4, 4, 4, 4, 8000], subLevel: 0.9 },
+    "Deep Space": { unison: 4, detune: 35, release: 3.0, reverbMix: 0.8, delayMix: 0.5, eq: [20, 100, -10, -10, -10, -10, 400], subLevel: 0.5 }
+};
+
+// --- KEYBOARD MAPPING ---
+// Mapped for A-K (White) and W-U (Black)
+const computerKeyMap = {
+    'z': 36, 's': 37, 'x': 38, 'd': 39, 'c': 40, 'v': 41, 'g': 42, 'b': 43, 'h': 44, 'n': 45, 'j': 46, 'm': 47,
+    'a': 48, 'w': 49, 's': 50, 'e': 51, 'd': 52, 'f': 53, 't': 54, 'g': 55, 'y': 56, 'h': 57, 'u': 58, 'j': 59, 'k': 60
+};
+
+const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+// --- EQ INTERACTIVITY ---
+const eqView = document.getElementById('eqView');
+const rtaCtx = document.getElementById('rtaCanvas').getContext('2d');
+const eqCtx = document.getElementById('eqCanvas').getContext('2d');
+let activeNode = null;
+
+function updateNodePhysics() {
+    const w = eqView.clientWidth, h = eqView.clientHeight;
+    bands.forEach((b, i) => {
+        b.x = (Math.log10(b.f / 20) / Math.log10(20000 / 20)) * w;
+        b.y = h / 2 - (b.g * (h / 40));
+    });
+}
+
+eqView.onmousedown = (e) => {
+    const rect = eqView.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    activeNode = bands.find(b => Math.hypot(b.x - mx, b.y - my) < 15);
+};
+
+window.onmousemove = (e) => {
+    if (!activeNode) return;
+    const rect = eqView.getBoundingClientRect();
+    const mx = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const my = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
+
+    activeNode.f = 20 * Math.pow(10, (mx / rect.width) * Math.log10(20000 / 20));
+    if (activeNode.type !== 'highpass' && activeNode.type !== 'lowpass') {
+        activeNode.g = (rect.height / 2 - my) / (rect.height / 40);
+    }
+    
+    const idx = bands.indexOf(activeNode);
+    filters[idx].frequency.value = activeNode.f;
+    filters[idx].gain.value = activeNode.g;
+    updateNodePhysics();
+};
+
+window.onmouseup = () => activeNode = null;
+
+// --- SYNTH ENGINE ---
+function startNote(midi) {
+    if (activeNotes.has(midi)) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+    const now = audioCtx.currentTime;
+    const voices = [];
+    const nGain = audioCtx.createGain();
+    nGain.gain.setValueAtTime(0, now);
+    nGain.gain.linearRampToValueAtTime(1, now + getVal('attack'));
+
+    const lfo = audioCtx.createOscillator();
+    const lfoG = audioCtx.createGain();
+    lfo.frequency.value = getVal('lfoRate');
+    lfoG.gain.value = getVal('lfoDepth');
+    lfo.connect(lfoG);
+    lfo.start();
+
+    const vFilter = audioCtx.createBiquadFilter();
+    vFilter.type = 'lowpass';
+    vFilter.frequency.value = 1000;
+    lfoG.connect(vFilter.frequency);
+
+    const uniCount = parseInt(getVal('unison'));
+    const detune = getVal('detune');
+
+    for(let i=0; i < uniCount; i++) {
+        let osc = audioCtx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.value = freq;
+        osc.detune.value = ((i / (uniCount - 1)) - 0.5) * 2 * detune || 0;
+        osc.connect(vFilter);
+        osc.start();
+        voices.push(osc);
+    }
+
+    const sub = audioCtx.createOscillator();
+    const subG = audioCtx.createGain();
+    sub.frequency.value = freq / 2;
+    subG.gain.value = getVal('subLevel');
+    sub.connect(subG); subG.connect(nGain); sub.start();
+    voices.push(sub);
+
+    vFilter.connect(nGain);
+    nGain.connect(filters[0]); // Into the EQ Chain
+
+    activeNotes.set(midi, { voices, lfo, nGain });
+    const key = document.querySelector(`[data-midi="${midi}"]`);
+    if(key) key.classList.add('active');
+}
+
+function stopNote(midi) {
+    if (!activeNotes.has(midi)) return;
+    const { voices, lfo, nGain } = activeNotes.get(midi);
+    const now = audioCtx.currentTime;
+    const rel = getVal('release');
+    nGain.gain.cancelScheduledValues(now);
+    nGain.gain.exponentialRampToValueAtTime(0.001, now + rel);
+    setTimeout(() => { voices.forEach(v => v.stop()); lfo.stop(); activeNotes.delete(midi); }, rel * 1000 + 100);
+    const key = document.querySelector(`[data-midi="${midi}"]`);
+    if(key) key.classList.remove('active');
+}
+
+// --- UI UTILS ---
+function switchTab(id) {
+    document.querySelectorAll('.tab-content, .tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+
+function loadPreset() {
+    const p = presets[document.getElementById('presetSelect').value];
+    Object.keys(p).forEach(k => {
+        if(k === 'eq') {
+            p[k].forEach((v, i) => { bands[i].f = v; filters[i].frequency.value = v; });
+        } else if(document.getElementById(k)) {
+            document.getElementById(k).value = p[k];
+        }
+    });
+    updateNodePhysics();
+}
+
+function saveNewPreset() {
+    const name = document.getElementById('pName').value || "New Patch";
+    const s = {}; document.querySelectorAll('input[type=range]').forEach(i => s[i.id] = parseFloat(i.value));
+    s.eq = bands.map(b => b.f);
+    presets[name] = s;
+    updatePresetSelect();
+}
+
+function updatePresetSelect() {
+    const s = document.getElementById('presetSelect');
+    s.innerHTML = Object.keys(presets).map(k => `<option value="${k}">${k}</option>`).join('');
+}
+
+function draw() {
+    requestAnimationFrame(draw);
+    const w = rtaCanvas.width = eqCanvas.width = eqView.clientWidth;
+    const h = rtaCanvas.height = eqCanvas.height = eqView.clientHeight;
+
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(data);
+    rtaCtx.fillStyle = '#050505'; rtaCtx.fillRect(0,0,w,h);
+    rtaCtx.fillStyle = '#00ffcc22';
+    for(let i=0; i<data.length; i++) {
+        let bar = (data[i]/255)*h;
+        rtaCtx.fillRect((i/data.length)*w, h-bar, 2, bar);
+    }
+
+    eqCtx.clearRect(0,0,w,h);
+    updateNodePhysics();
+    bands.forEach(b => {
+        eqCtx.shadowBlur = 10; eqCtx.shadowColor = '#00ffcc';
+        eqCtx.fillStyle = '#00ffcc';
+        eqCtx.beginPath(); eqCtx.arc(b.x, b.y, 6, 0, Math.PI*2); eqCtx.fill();
+        eqCtx.strokeStyle = '#fff'; eqCtx.lineWidth = 1; eqCtx.stroke();
+    });
+}
+
+const getVal = (id) => parseFloat(document.getElementById(id).value);
+
+// Init Keyboard
+const kb = document.getElementById('keyboard');
+for(let i=24; i<=72; i++) {
+    const isBlack = [1,3,6,8,10].includes(i%12);
+    const k = document.createElement('div');
+    k.className = `key ${isBlack ? 'black' : ''}`;
+    k.dataset.midi = i;
+    k.innerHTML = !isBlack ? `<span>${noteNames[i%12]}${Math.floor(i/12)-1}</span>` : '';
+    k.onmousedown = () => startNote(i);
+    k.onmouseup = () => stopNote(i);
+    kb.appendChild(k);
+}
+
+window.onkeydown = (e) => { if(computerKeyMap[e.key.toLowerCase()]) startNote(computerKeyMap[e.key.toLowerCase()]); };
+window.onkeyup = (e) => { if(computerKeyMap[e.key.toLowerCase()]) stopNote(computerKeyMap[e.key.toLowerCase()]); };
+
+updatePresetSelect();
+loadPreset();
+draw();
+</script>
+</body>
+</html>
